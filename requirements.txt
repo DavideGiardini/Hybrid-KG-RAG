@@ -10,3 +10,4 @@ scikit-learn
 tensorflow
 matplotlib
 ragas
+beautifulsoup4

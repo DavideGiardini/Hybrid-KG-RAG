@@ -1,0 +1,78 @@
+//Creating Constrain 1/4
+CREATE CONSTRAINT resource_uri IF NOT EXISTS
+FOR (c:Resource) REQUIRE c.uri IS UNIQUE;
+
+//Creating Constrain 2/4
+CREATE CONSTRAINT page_uri IF NOT EXISTS
+FOR (c:Page) REQUIRE c.uri IS UNIQUE;
+
+// Creating Contrain 3/4
+CREATE CONSTRAINT subchapter_uri IF NOT EXISTS
+FOR (c:SubChapter) REQUIRE c.uri IS UNIQUE;
+
+// Creating Contrain 4/4
+CREATE CONSTRAINT chunk_uri IF NOT EXISTS
+FOR (c:Chunk) REQUIRE c.uri IS UNIQUE;
+
+//Creating :Page nodes
+LOAD CSV WITH HEADERS FROM 'file:///Page.csv' AS row
+CALL {WITH row
+MERGE (c:Page&Resource {uri: row.page_uri, text: row.page_uri})} IN TRANSACTIONS OF 5000 ROWS;
+
+// Creating :SubChapter nodes
+LOAD CSV WITH HEADERS FROM 'file:///subChapter.csv' AS row
+CALL {WITH row
+MERGE (c:SubChapter&Resource {uri: row.subC_uri, text: row.subC_uri})} IN TRANSACTIONS OF 5000 ROWS;
+
+// Creating :Chunk nodes
+LOAD CSV WITH HEADERS FROM 'file:///Chunk.csv' AS row
+CALL {WITH row
+MERGE (c:Chunk&Resource {uri: row.chunk_uri, text: row.chunk_content})} IN TRANSACTIONS OF 5000 ROWS;
+
+// Linking subchapters
+LOAD CSV WITH HEADERS FROM 'file:///has_subchapter.csv' AS row
+CALL {WITH row
+MATCH (node0:Resource {uri: row.uri})
+MATCH (node1:SubChapter {uri: row.subC_uri})
+WITH node0, node1, row, 'is ' + row.rel_type + ' of' AS new_rel_type
+CREATE (node0)-[:has_subchapter {type: row.rel_type}]->(node1), (node0)<-[:is_subchapter_of {type: new_rel_type}]-(node1)} IN TRANSACTIONS OF 5000 ROWS;
+
+// Linking chunks
+LOAD CSV WITH HEADERS FROM 'file:///has_chunk.csv' AS row
+CALL {WITH row
+MATCH (page:Resource {uri: row.uri}), (sub:Chunk {uri: row.chunk_uri})
+CREATE (page)-[:has_chunk]->(sub), (page)<-[:is_chunk_of]-(sub)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Linking main pages
+LOAD CSV WITH HEADERS FROM 'file:///mainpage.csv' AS row
+CALL {WITH row
+MATCH (page:Resource {uri: row.uri}), (b:Page {uri: row.main_uri})
+CREATE (page)-[:has_main]->(b), (page)<-[:is_main_of]-(b)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Linking cited pages
+LOAD CSV WITH HEADERS FROM 'file:///cites.csv' AS row
+CALL {WITH row
+MATCH (chunk:Chunk {uri: row.chunk_uri}), (cited:Page {uri: row.page_uri})
+CREATE (chunk)-[:cites]->(cited), (chunk)<-[:cited_in]-(cited)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Creating previous and next relationships
+LOAD CSV WITH HEADERS FROM 'file:///next.csv' AS row
+CALL {WITH row
+MATCH (prev:Chunk {uri: row.prev_chunk}), (next:Chunk {uri: row.next_chunk})
+CREATE (prev)-[:next]->(next), (prev)<-[:previous]-(next)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Linking Pages to all chunks
+CALL {MATCH (a:Page)-[:has_subchapter*1..8]->(:SubChapter)-[:has_chunk]->(c:Chunk)
+CREATE (a)-[:has_chunk]->(c), (a)<-[:is_chunk_of]-(c)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Linking SubChapters to all chunks
+CALL {MATCH (a:SubChapter)-[:has_subchapter*1..8]->(:SubChapter)-[:has_chunk]->(c:Chunk)
+CREATE (a)-[:has_chunk]->(c), (a)<-[:is_chunk_of]-(c)} IN TRANSACTIONS OF 10000 ROWS;
+
+// Creating OriginalPage label 1/2
+MATCH (a:Page)-[:has_subchapter]->(:SubChapter)
+SET a :OriginalPage
+
+// Creating OriginalPage label 2/2
+MATCH (a:Page)-[:has_chunk]->(:Chunk)
+SET a :OriginalPage
