@@ -33,11 +33,9 @@ Unveiling Hidden Information in Unstructured Documents: Organization and Hybrid 
 									<li><em>Entity</em> nodes linked by semantic relations harvested from DBpedia to preserve <em>relations</em></li>
 								</ul>
 								This representation makes content, layout, and entity links explicitly query-able.</li>
-
 							<li><strong>Hybrid Retrieval Engine.</strong> Six complementary retrievers, covering page structure, entity sub-graphs, and dense-vector similarity, score each chunk from different viewpoints.  
 								A lightweight neural network learns to fuse these scores, weighting each retriever according to its real contribution to relevance rather than treating them equally.</li>
 						</ul>
-
 						<p>
 							<h4>Results.</h4> On the held-out split of Google NQ and on a 100-question synthetic Multi-Hop set, the hybrid approach:
 							<ul>
