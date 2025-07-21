@@ -1,0 +1,12 @@
+neo4j
+numpy
+tqdm
+langchain-openai
+langchain-community
+dotenv
+Levenshtein
+pandas
+scikit-learn
+tensorflow
+matplotlib
+ragas
