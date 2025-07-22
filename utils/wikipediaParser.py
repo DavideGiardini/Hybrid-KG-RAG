@@ -1,10 +1,9 @@
 from bs4 import BeautifulSoup
-import re
-import os
+import re, os, Levenshtein
 import pandas as pd
 from tqdm import tqdm
 from neo4j import GraphDatabase
-import Levenshtein
+import config.Envloader as el
 
 reset_diz= {
     # Lists all pages nodes
@@ -273,7 +272,7 @@ def createConstrains():
     content = file.read().split("\n\n")
     file.close
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     for chunk in content[:4]:
         comment = chunk.split('\n')[0].replace('//', '').strip()
         print(comment)
@@ -296,7 +295,7 @@ def neo4jExecutor():
     content = file.read().split("\n\n")
     file.close
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     for chunk in content[4:]:
         comment = chunk.split('\n')[0].replace('//', '').strip()
         print(comment)
@@ -319,7 +318,7 @@ def neo4jExecutor():
 
 def linkChunks():
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         id_lst, summary, keys = driver.execute_query(
             "MATCH (n:OriginalPage) RETURN ID(n);",
@@ -336,7 +335,7 @@ def linkChunks():
 
 def extractRelations(query_lst):
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         rel_lst, summary, keys = driver.execute_query(
             """WITH [%s] AS list
@@ -351,7 +350,7 @@ def extractRelations(query_lst):
 
 def extractLabels(query_lst):
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         label_lst, summary, keys = driver.execute_query(
             """WITH [%s] AS list
@@ -381,7 +380,7 @@ def writeLabel(a,label):
 
 def resetDb():
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         session = driver.session()
         session.run(
@@ -414,7 +413,7 @@ def resetDb():
 
 def addDBpediaInfo():
     URI = "neo4j://localhost"
-    AUTH = ("neo4j", "Giardo2000")
+    AUTH = ("neo4j", el.NEO4J_PWD)
     print("Adding DBpedia relationships")
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         session = driver.session()
